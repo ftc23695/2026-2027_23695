@@ -23,8 +23,8 @@ public class AutoParkRed2 extends LinearOpMode {
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose start = poseFactory.of(8.6368, 133.1882, 0);
-    private final Pose point1 = poseFactory.of(8.942, 118.8698, 0);
+    private final Pose start = poseFactory.of(9, 133.5, 0);
+    private final Pose point1 = poseFactory.of(9, 120, 0);
 
     // Autonomous routine
     public Command autoRoutine() {

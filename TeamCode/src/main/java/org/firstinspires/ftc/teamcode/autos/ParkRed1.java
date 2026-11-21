@@ -25,8 +25,8 @@ public class ParkRed1 extends LinearOpMode {
 
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
-    private final Pose start = poseFactory.of(8.342, 58.6059, 0);
-    private final Pose point1 = poseFactory.of(9.012, 94.01, 0);
+    private final Pose start = poseFactory.of(9, 58.5, 0);
+    private final Pose point1 = poseFactory.of(9, 94, 0);
 
     // Autonomous routine
     public Command autoRoutine() {

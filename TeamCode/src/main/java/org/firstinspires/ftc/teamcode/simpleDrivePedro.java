@@ -238,12 +238,12 @@ public class simpleDrivePedro extends OpMode {
         //Shooter Code
         if(gamepad2.left_trigger > 0.5){
             shooterVelocity=1600;
-            if(shooter.getVelocity()>1500){
+            if(shooter.getVelocity()>1390){
                 blockerFront.setPosition(0.36);
             }
         } else if (gamepad2.right_trigger > 0.5) {
             shooterVelocity=1600;
-            if(shooter.getVelocity()>1500){
+            if(shooter.getVelocity()>1390){
                 blocker.setPosition(0.36);
             }
         } else if (gamepad2.a) {
