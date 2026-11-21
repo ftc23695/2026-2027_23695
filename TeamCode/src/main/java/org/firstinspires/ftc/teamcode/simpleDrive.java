@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 
+
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -123,7 +124,7 @@ public class simpleDrive extends OpMode {
 //            rightBackPower /= 4;
 //        }
         //Front Intake Code
-        if (gamepad1.left_bumper || gamepad2.left_bumper || shooter.getVelocity() > 1000){
+        if (gamepad1.left_bumper || gamepad2.left_bumper || gamepad2.left_trigger > 0.5 && shooter.getVelocity() > 1000){
             intakeForwardSpeed=1;
         }else if(gamepad1.dpad_down || gamepad2.dpad_down){
             intakeForwardSpeed=-1;
@@ -133,7 +134,7 @@ public class simpleDrive extends OpMode {
         }
 
         //Back Intake Code
-        if (gamepad1.right_bumper || gamepad2.right_bumper || shooter.getVelocity()>1000){
+        if (gamepad1.right_bumper || gamepad2.right_bumper || gamepad2.left_trigger > 0.5 && shooter.getVelocity()>1000){
             intakeBackSpeed=1;
         } else if (gamepad1.dpad_down || gamepad2.dpad_down) {
             intakeBackSpeed=-1;
@@ -146,9 +147,9 @@ public class simpleDrive extends OpMode {
             if(shooter.getVelocity()>1000){
                 blockerFront.setPosition(0.36);
             }
-        } else if (gamepad2.right_trigger > 0.5) {
-            shooterVelocity=1000;
-            if(shooter.getVelocity()>1000){
+        } else if (gamepad2.right_trigger > 0.5 || gamepad1.a) {
+            shooterVelocity=1800;
+            if(shooter.getVelocity()>1800){
                 blocker.setPosition(0.36);
             }
         } else {
