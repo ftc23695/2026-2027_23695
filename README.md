@@ -433,8 +433,8 @@ voltage was not updated on driver station if OpMode did not send any telemetry.
   Blocks editor and at runtime.
 * Standardizes on the form "OpMode" for the term OpMode.
     * The preferred way to refer to OpModes that specifically extend `LinearOpMode` (including Blocks OpModes) is "linear OpMode".
-    * The preferred way to refer to OpModes that specifically extend `OpMode` directly is "iterative OpMode".
-* Overhauls `OpMode` and `LinearOpMode` Javadoc comments to be easier to read and include more detail.
+    * The preferred way to refer to OpModes that specifically extend `OpModeStorage` directly is "iterative OpMode".
+* Overhauls `OpModeStorage` and `LinearOpMode` Javadoc comments to be easier to read and include more detail.
 * Makes minor enhancements to Java samples
     * Javadoc comments in samples that could be rendered badly in Android Studio have been converted to standard multi-line comments
     * Consistency between samples has been improved
@@ -530,11 +530,11 @@ This is a bug fix only release to address the following four issues.
 ## Version 8.1 (20221121-115119)
 
 ### Breaking Changes
-* Deprecates the `OpMode` fields `msStuckDetectInit`, `msStuckDetectInitLoop`, `msStuckDetectStart`, `msStuckDetectLoop`, and `msStuckDetectStop`.
+* Deprecates the `OpModeStorage` fields `msStuckDetectInit`, `msStuckDetectInitLoop`, `msStuckDetectStart`, `msStuckDetectLoop`, and `msStuckDetectStop`.
     * OpModes no longer have a time limit for `init()`, `init_loop()`, `start()` or `loop()`, so the fields corresponding to those methods are no longer used.
     * `stop()` still has a time limit, but it is now hardcoded to be 1 second, and cannot be changed using `msStuckDetectStop`.
-* Deprecates the `OpMode` methods `internalPreInit()`, `internalPostInitLoop()`, and `internalPostLoop()`.
-    * Iterative `OpMode`s will continue to call these methods in case they were overridden.
+* Deprecates the `OpModeStorage` methods `internalPreInit()`, `internalPostInitLoop()`, and `internalPostLoop()`.
+    * Iterative `OpModeStorage`s will continue to call these methods in case they were overridden.
     * These methods will not be called at all for `LinearOpMode`s.
 * Deprecates (and stops respecting) `DeviceProperties.xmlTagAliases`.
 
@@ -568,9 +568,9 @@ This is a bug fix only release to address the following four issues.
     interface by passing a `BNO055IMUNew.Parameters` instance to `IMU.initialize()`.
   * The `IMU` interface is also suitable for implementation by third-party vendors for IMUs that
     support providing the orientation in the form of a quaternion.
-* Iterative `OpMode`s (as opposed to `LinearOpMode`s) now run on a dedicated thread.
+* Iterative `OpModeStorage`s (as opposed to `LinearOpMode`s) now run on a dedicated thread.
     * Cycle times should not be as impacted by everything else going on in the system.
-    * Slow `OpMode`s can no longer increase the amount of time it takes to process network commands, and vice versa.
+    * Slow `OpModeStorage`s can no longer increase the amount of time it takes to process network commands, and vice versa.
     * The `init()`, `init_loop()`, `start()` and `loop()` methods no longer need to return within a certain time frame.
 * BNO055 IMU legacy driver: restores the ability to initialize in one OpMode, and then have another OpMode re-use that
   initialization. This allows you to maintain the 0-yaw position between OpModes, if desired.
@@ -614,7 +614,7 @@ This is a bug fix only release to address the following four issues.
   * Setting `pitchMode` to `PitchMode.WINDOWS` would break the coordinate conventions used by the driver.
 * Moves `OpModeManagerImpl` to the `com.qualcomm.robotcore.eventloop.opmode` package.
   * This breaks third party libraries EasyOpenCV (version 1.5.1 and earlier) and FTC Dashboard (version 0.4.4 and earlier).
-* Deletes the deprecated `OpMode` method `resetStartTime()` (use `resetRuntime()` instead).
+* Deletes the deprecated `OpModeStorage` method `resetStartTime()` (use `resetRuntime()` instead).
 * Deletes the protected `LinearOpMode.LinearOpModeHelper` class (which was not meant for use by OpModes).
 * Removes I2C Device (Synchronous) config type (deprecated since 2018)
 

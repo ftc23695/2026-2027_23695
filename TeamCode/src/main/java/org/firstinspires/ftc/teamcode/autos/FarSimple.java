@@ -9,7 +9,12 @@ import com.pedropathing.math.Pose;
 import com.pedropathing.paths.Path;
 import com.pedropathing.ivy.Command;
 import com.pedropathing.ivy.Scheduler;
+
+import static com.pedropathing.ivy.Scheduler.execute;
 import static com.pedropathing.ivy.Scheduler.schedule;
+import static com.pedropathing.ivy.commands.Commands.instant;
+import static com.pedropathing.ivy.commands.Commands.waitMs;
+import static com.pedropathing.ivy.groups.Groups.parallel;
 import static com.pedropathing.ivy.groups.Groups.sequential;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -39,34 +44,39 @@ public class FarSimple extends LinearOpMode {
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
+                setup(),
+                shoot(700, 1000),
                 follow(follower, path1()),
                 follow(follower, path2())
         );
     }
-    public void shoot(int power
-                    //, int turret, double hood
-                    , int pause){
-        if (setupTrue) {
-            shooter.setVelocity(power);
-            sleep(pause);
-            frontIntake.setPower(1);
-            sleep(pause);
-            frontIntake.setPower(0);
-            shooter.setVelocity(restShooterVeloc);
-        }
-    }
-    public void setup(){
-        shooter = hardwareMap.get(DcMotorEx.class, "shooter");
-        shooter.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
-        shooter.setDirection(DcMotorEx.Direction.FORWARD);
-        shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        frontIntake = hardwareMap.get(DcMotor.class, "intakeForward");
-        frontIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        frontIntake.setDirection(DcMotor.Direction.FORWARD);
-        frontIntake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        setupTrue = true;
+    public Command setup() {
+        return parallel(
+                instant(() -> shooter = hardwareMap.get(DcMotorEx.class, "shooter")),
+                instant(() -> shooter.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER)),
+                instant(() -> shooter.setDirection(DcMotorEx.Direction.FORWARD)),
+                instant(() -> shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE)),
+
+                instant(() -> frontIntake = hardwareMap.get(DcMotor.class, "intakeForward")),
+                instant(() -> frontIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER)),
+                instant(() -> frontIntake.setDirection(DcMotor.Direction.FORWARD)),
+                instant(() -> frontIntake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE)),
+                instant(() -> setupTrue = true)
+        );
     }
+
+    public Command shoot(int power, int pause){
+        return sequential(
+                instant(() -> shooter.setVelocity(power)),
+                waitMs(pause),
+                instant(() -> frontIntake.setPower(1)),
+                waitMs(pause),
+                instant(() -> frontIntake.setPower(0)),
+                instant(() -> shooter.setVelocity(restShooterVeloc))
+        );
+    }
+
 
     @Override
     public void runOpMode() {
@@ -75,7 +85,6 @@ public class FarSimple extends LinearOpMode {
         follower.setPose(start);
         follower.update();
         shooter.setVelocity(restShooterVeloc);
-        setup();
 
         waitForStart();
         schedule(autoRoutine());
@@ -99,7 +108,6 @@ public class FarSimple extends LinearOpMode {
     }
 
     public Path path1() {
-        shoot(700, 1000);
         return Paths.line(start, path1).linear(start, path1);
     }
 
