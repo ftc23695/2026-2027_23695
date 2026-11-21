@@ -23,6 +23,9 @@ import com.pedropathing.follower.ManualDrive;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.math.Pose;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 
 //This is the interface that declares the code below as TeleOp.
 //Interfaces use @ to start and do not require ; to end them off. We don't use interfaces too often.
@@ -41,10 +44,17 @@ public class simpleDrivePedro extends OpMode {
     private DcMotor leftBackDrive = null;
     private DcMotor rightFrontDrive = null;
     private DcMotor rightBackDrive = null;
+    private DcMotor intakeForward = null;
+    private DcMotor intakeBack = null;
+    private DcMotorEx shooter = null;
+    private Servo blocker = null;
+    private Servo blockerFront = null;
 
     public Follower follower;
 
     boolean blue = false;
+    double shooterVelocity = 0;
+    boolean isReversed = false;
 
 
     // The "@Override" interface stops all other functions once this one is called if added onto any.
@@ -62,6 +72,11 @@ public class simpleDrivePedro extends OpMode {
         rightFrontDrive = hardwareMap.get(DcMotor.class, "right_front");
         leftBackDrive = hardwareMap.get(DcMotor.class, "left_back");
         rightBackDrive = hardwareMap.get(DcMotor.class, "right_back");
+        intakeForward = hardwareMap.get(DcMotor.class, "intakeForward");
+        intakeBack = hardwareMap.get(DcMotor.class, "intakeBack");
+        shooter = hardwareMap.get(DcMotorEx.class, "shooter");
+        blockerFront = hardwareMap.get(Servo.class, "frontBlocker");
+        blocker = hardwareMap.get(Servo.class,"blocker");
 
 
 
@@ -71,6 +86,9 @@ public class simpleDrivePedro extends OpMode {
         leftBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightFrontDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         rightBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intakeForward.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intakeBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        shooter.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
 
 
         // Dictates what direction a motor will spin.
@@ -79,6 +97,11 @@ public class simpleDrivePedro extends OpMode {
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        intakeForward.setDirection(DcMotor.Direction.FORWARD);
+        intakeBack.setDirection(DcMotorSimple.Direction.FORWARD);
+        shooter.setDirection(DcMotorEx.Direction.FORWARD);
+        blockerFront.setDirection(Servo.Direction.FORWARD);
+        blocker.setDirection(Servo.Direction.FORWARD);
 
 
         // Dictates if a motor will use the "Brake" function to slow down when not given any power. In general, recommended.
@@ -86,6 +109,9 @@ public class simpleDrivePedro extends OpMode {
         rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intakeForward.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intakeBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        shooter.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         telemetry.addData("status", "Awaiting input...");
 
         follower = Constants.create(hardwareMap);
@@ -120,6 +146,8 @@ public class simpleDrivePedro extends OpMode {
         // Adds telemetry data to inform the driver of the robots status as Initialized.
         telemetry.addData("status", "Initialized");
         telemetry.update();
+
+
     }
 
     // Once more, @Override interface to make this play over ANY other process the bot may currently be running.
@@ -152,15 +180,34 @@ public class simpleDrivePedro extends OpMode {
 
 
         // Note: Joysticks are technically reversed, moving it left gives a right reading. Only really matters on the Y axis.
+        double intakeForwardSpeed = 0.0;
+        double intakeBackSpeed = 0.0;
 
-        DrivePowers powers = ManualDrive.fieldCentric(
-                -gamepad1.left_stick_y,
-                gamepad1.left_stick_x,
-                gamepad1.right_stick_x,
-                follower.pose().heading()
-        );
-        follower.manual(powers);
-        follower.update();
+        if(gamepad1.bWasPressed()){
+            isReversed=!isReversed;
+        }
+        if (isReversed) {
+            DrivePowers powers = ManualDrive.fieldCentric(
+                    gamepad1.left_stick_y,
+                    -gamepad1.left_stick_x,
+                    gamepad1.right_stick_x,
+                    follower.pose().heading()
+
+            );
+            follower.manual(powers);
+            follower.update();
+        }
+        else {
+            DrivePowers powers = ManualDrive.fieldCentric(
+                    -gamepad1.left_stick_y,
+                    gamepad1.left_stick_x,
+                    gamepad1.right_stick_x,
+                    follower.pose().heading()
+            );
+            follower.manual(powers);
+            follower.update();
+        }
+
 
         Pose robotPose = follower.pose();
 
@@ -168,7 +215,58 @@ public class simpleDrivePedro extends OpMode {
         telemetry.addData("Robot X", robotPose.x());
         telemetry.addData("Robot Y", robotPose.y());
         telemetry.addData("Robot Heading", Math.toDegrees(robotPose.heading()));
+
+
+        //Front Intake Code
+        if (gamepad1.left_bumper || gamepad2.left_bumper || gamepad2.left_trigger > 0.5 && shooter.getVelocity() > 1500){
+            intakeForwardSpeed=1;
+        }else if(gamepad1.dpad_down || gamepad2.dpad_down){
+            intakeForwardSpeed=-1;
+        } else {
+            intakeForwardSpeed=0;
+
+        }
+
+        //Back Intake Code
+        if (gamepad1.right_bumper || gamepad2.right_bumper || gamepad2.right_trigger > 0.5 && shooter.getVelocity()>1500){
+            intakeBackSpeed=1;
+        } else if (gamepad1.dpad_down || gamepad2.dpad_down) {
+            intakeBackSpeed=-1;
+        } else {
+            intakeBackSpeed=0;
+        }
+        //Shooter Code
+        if(gamepad2.left_trigger > 0.5){
+            shooterVelocity=1600;
+            if(shooter.getVelocity()>1500){
+                blockerFront.setPosition(0.36);
+            }
+        } else if (gamepad2.right_trigger > 0.5) {
+            shooterVelocity=1600;
+            if(shooter.getVelocity()>1500){
+                blocker.setPosition(0.36);
+            }
+        } else if (gamepad2.a) {
+            shooterVelocity=1600;
+        } else {
+            shooterVelocity=0;
+            blockerFront.setPosition(0);
+            blocker.setPosition(0);
+        }
+
+
+        shooter.setVelocity(shooterVelocity);
+        if (isReversed) {
+            intakeForward.setPower(intakeBackSpeed);
+            intakeBack.setPower(intakeForwardSpeed);
+        } else {
+            intakeForward.setPower(intakeForwardSpeed);
+            intakeBack.setPower(intakeBackSpeed);
+        }
+
+
     }
+
 
 
     @Override
@@ -177,8 +275,6 @@ public class simpleDrivePedro extends OpMode {
         rightFrontDrive.setPower(0);
         leftBackDrive.setPower(0);
         rightBackDrive.setPower(0);
-
-
     }
 
 }
