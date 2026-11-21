@@ -16,18 +16,17 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-
 @Autonomous(name = "FarSimple", group = "Autonomous")
 public class FarSimple extends LinearOpMode {
     private DcMotorEx shooter = null;
     private DcMotor frontIntake = null;
+    int restShooterVeloc = 500;
+    boolean setupTrue = false;
 
-//    private Servo hood = null;
-//    private Servo turret = null;
+    //private Servo hood = null;
+    //private Servo turret = null;
     private Follower follower;
 
-    int restShooterVeloc = 500;
     private final PoseFactory poseFactory = PoseFactory.degrees();
 
     private final Pose start = poseFactory.of(54, 8, 90);
@@ -47,12 +46,14 @@ public class FarSimple extends LinearOpMode {
     public void shoot(int power
                     //, int turret, double hood
                     , int pause){
-        shooter.setVelocity(power);
-        sleep(pause);
-        frontIntake.setPower(1);
-        sleep(pause);
-        frontIntake.setPower(0);
-        shooter.setVelocity(restShooterVeloc);
+        if (setupTrue) {
+            shooter.setVelocity(power);
+            sleep(pause);
+            frontIntake.setPower(1);
+            sleep(pause);
+            frontIntake.setPower(0);
+            shooter.setVelocity(restShooterVeloc);
+        }
     }
     public void setup(){
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
@@ -64,6 +65,7 @@ public class FarSimple extends LinearOpMode {
         frontIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontIntake.setDirection(DcMotor.Direction.FORWARD);
         frontIntake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        setupTrue = true;
     }
 
     @Override
