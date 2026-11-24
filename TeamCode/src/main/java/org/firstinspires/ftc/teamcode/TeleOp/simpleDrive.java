@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.TeleOp;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
@@ -26,6 +26,10 @@ public class simpleDrive extends OpMode {
     private Servo blockerFront = null;
     double shooterVelocity = 0;
     boolean isReversed = false;
+    boolean stoper = false;
+    int shootPower = 1500;
+    int idlePower = 0;
+    double thresholdPower = (shootPower * 0.9);
 
     @Override
     public void init() {
@@ -75,9 +79,12 @@ public class simpleDrive extends OpMode {
         double rightFrontPower;
         double leftBackPower;
         double rightBackPower;
-        double intakeForwardSpeed = 0.0;
-        double intakeBackSpeed = 0.0;
-
+        double intakeMainSpeed = 0.0;
+        double intakeAltSpeed = 0.0;
+        // boolean stoper = false;
+        boolean dPad_down = false;
+        boolean left_bumper = false;
+        boolean right_bumper = false;
 //
 //
 //      left trigger        right trigger
@@ -96,14 +103,22 @@ public class simpleDrive extends OpMode {
         double strafe = gamepad1.left_stick_x;
         double turn = gamepad1.right_stick_x;
 
-        if(gamepad1.bWasPressed()){
+        if (gamepad1.bWasPressed()){
             isReversed=!isReversed;
         }
-        if(isReversed){
+        if (isReversed){
             drive=-drive;
             strafe = -strafe;
-
         }
+        //dpad down check
+        dPad_down = gamepad1.dpad_down || gamepad2.dpad_down;
+
+        //bumper checks
+        left_bumper = gamepad1.left_bumper || gamepad2.left_bumper;
+
+        right_bumper = gamepad1.right_bumper || gamepad2.right_bumper;
+
+
         // Here, the number given is \/ after this.     The minimum \/       \/ and the maximum are after their respective labels.
         leftFrontPower = Range.clip(drive + turn + strafe, -1, 1);
         rightFrontPower = Range.clip(drive - turn - strafe, -1, 1);
@@ -123,39 +138,42 @@ public class simpleDrive extends OpMode {
 //            rightFrontPower /= 4;
 //            rightBackPower /= 4;
 //        }
-        //Front Intake Code
-        if (gamepad1.left_bumper || gamepad2.left_bumper || gamepad2.left_trigger > 0.5 && shooter.getVelocity() > 1500){
-            intakeForwardSpeed=1;
-        }else if(gamepad1.dpad_down || gamepad2.dpad_down){
-            intakeForwardSpeed=-1;
-        } else {
-            intakeForwardSpeed=0;
 
+        //Front Intake Code
+        if (left_bumper || (gamepad2.left_trigger > 0.5 && shooter.getVelocity() > thresholdPower)){
+            intakeMainSpeed =1;
+        }
+        else {
+            intakeMainSpeed =0;
         }
 
         //Back Intake Code
-        if (gamepad1.right_bumper || gamepad2.right_bumper || gamepad2.right_trigger > 0.5 && shooter.getVelocity()>1500){
-            intakeBackSpeed=1;
-        } else if (gamepad1.dpad_down || gamepad2.dpad_down) {
-            intakeBackSpeed=-1;
-        } else {
-            intakeBackSpeed=0;
+        if (right_bumper || (gamepad2.right_trigger > 0.5 && shooter.getVelocity() > thresholdPower)){
+            intakeAltSpeed =1;
         }
+        else {
+            intakeAltSpeed =0;
+        }
+        //eject
+        if (dPad_down){
+            intakeMainSpeed = -1;
+            intakeAltSpeed = -1;
+        }
+
         //Shooter Code
-        if(gamepad2.left_trigger > 0.5){
-            shooterVelocity=1600;
-            if(shooter.getVelocity()>1390){
-                blockerFront.setPosition(0.36);
-            }
-        } else if (gamepad2.right_trigger > 0.5) {
-            shooterVelocity=1600;
-            if(shooter.getVelocity()>1390){
-                blocker.setPosition(0.36);
-            }
-        } else if (gamepad2.a) {
-            shooterVelocity=1600;
-        } else {
-            shooterVelocity=0;
+        if (gamepad2.left_trigger > 0.5){
+            shooterVelocity = shootPower;
+            blockerFront.setPosition(0.36);
+        }
+        else if (gamepad2.right_trigger > 0.5) {
+            shooterVelocity = shootPower;
+            blocker.setPosition(0.36);
+        }
+        else if (gamepad2.a) {
+            shooterVelocity = shootPower;
+        }
+        else {
+            shooterVelocity = idlePower;
             blockerFront.setPosition(0);
             blocker.setPosition(0);
         }
@@ -164,19 +182,19 @@ public class simpleDrive extends OpMode {
 
 
 
-            //setting final power levels
-            leftFrontDrive.setPower(leftFrontPower);
-            rightFrontDrive.setPower(rightFrontPower);
-            leftBackDrive.setPower(leftBackPower);
-            rightBackDrive.setPower(rightBackPower);
-            shooter.setVelocity(shooterVelocity);
-            if (isReversed) {
-                intakeForward.setPower(intakeBackSpeed);
-                intakeBack.setPower(intakeForwardSpeed);
-            } else {
-                intakeForward.setPower(intakeForwardSpeed);
-                intakeBack.setPower(intakeBackSpeed);
-            }
+        //setting final power levels
+        leftFrontDrive.setPower(leftFrontPower);
+        rightFrontDrive.setPower(rightFrontPower);
+        leftBackDrive.setPower(leftBackPower);
+        rightBackDrive.setPower(rightBackPower);
+        shooter.setVelocity(shooterVelocity);
+        if (isReversed) {
+            intakeForward.setPower(intakeAltSpeed);
+            intakeBack.setPower(intakeMainSpeed);
+        } else {
+            intakeForward.setPower(intakeMainSpeed);
+            intakeBack.setPower(intakeAltSpeed);
+        }
 
         // telemetry
         telemetry.addData("left front motor expected", "power = %.2f", leftFrontPower);

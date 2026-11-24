@@ -1,3 +1,4 @@
+/*
 package org.firstinspires.ftc.teamcode.autos;
 
 import static com.pedropathing.api.Paths.*;
@@ -79,3 +80,4 @@ public class Path2 extends LinearOpMode {
         return Paths.line(point2, point3).reverseTangent();
     }
 }
+*/

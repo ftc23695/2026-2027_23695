@@ -4,7 +4,7 @@
 //The comment for any line will be above said line, never below.
 
 //This line is used to group the folder together to avoid name conflicts and the like.
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.Deprecated;
 
 //The four lines below this are where we import the functions we use for literally everything.
 //You most likely will have to add more of these later on in the season.
@@ -13,26 +13,25 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 //This one imports TeleOp, which is constant in TeleOp programs. In auto programs, it is not required.
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 //If you couldn't guess from the last word in this line, this one gives you the functions for motors, such as "DcMotor.setPower(power)"
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 //We use this to limit the power levels on specific motors, such as the drive ones.
 //The Range function limits a specific value to a top limit and a lower limit.
 //As an example, if we input a top limit of 1, any value below 1 stays the same whereas any number above 1 gets shrunk back down into 1.
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.Range;
 
 //This is the interface that declares the code below as TeleOp.
 //Interfaces use @ to start and do not require ; to end them off. We don't use interfaces too often.
-@TeleOp
 
 //Within this function is the rest of our code that is not imports or packages.
 //The "meat of the steak" if you will, everything above is just the "spices" that make it work (or for steaks, taste good.)
 //99% of your coding will occur within this function.
-public class IntakeTest extends OpMode {
+public class simpleDriveOLD extends OpMode {
 
     //Declares that there is a DcMotor called leftFrontDrive.
     //The "= null" is present due to the fact that we declared this "variable" to be a DcMotor, which does not accept other variable types.
@@ -44,10 +43,12 @@ public class IntakeTest extends OpMode {
     private DcMotor rightBackDrive = null;
     private DcMotor intakeForward = null;
     private DcMotor intakeBack = null;
-
-    private DcMotor shooter = null;
+    private DcMotorEx shooter = null;
     private Servo blocker = null;
     private Servo blockerFront = null;
+    double shooterVelocity = 0;
+
+
     // The "@Override" interface stops all other functions once this one is called if added onto any.
     @Override
 
@@ -65,10 +66,7 @@ public class IntakeTest extends OpMode {
         rightBackDrive = hardwareMap.get(DcMotor.class, "right_back");
         intakeForward = hardwareMap.get(DcMotor.class, "intakeForward");
         intakeBack = hardwareMap.get(DcMotor.class, "intakeBack");
-        shooter = hardwareMap.get(DcMotor.class, "shooter");
-
-        blockerFront = hardwareMap.get(Servo.class, "frontBlocker");
-        blocker = hardwareMap.get(Servo.class,"blocker");
+        shooter = hardwareMap.get(DcMotorEx.class, "shooter");
 
         // Dictates whether the given motor runs using an encoder.
         // As a refresher, an encoder is an additional cable that supplies the hub with data on what the motor is doing.
@@ -78,22 +76,17 @@ public class IntakeTest extends OpMode {
         rightBackDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeForward.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intakeBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        shooter.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-
-
+        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         // Dictates what direction a motor will spin.
         // IF YOU NEED TO SWAP A MOTORS DIRECTION, DO IT HERE, NOT ANYWHERE ELSE!!!!!!
-        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
         intakeForward.setDirection(DcMotor.Direction.FORWARD);
         intakeBack.setDirection(DcMotorSimple.Direction.FORWARD);
         shooter.setDirection(DcMotorSimple.Direction.FORWARD);
-        blockerFront.setDirection(Servo.Direction.FORWARD);
-        blocker.setDirection(Servo.Direction.FORWARD);
 
         // Dictates if a motor will use the "Brake" function to slow down when not given any power. In general, recommended.
         leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -103,8 +96,6 @@ public class IntakeTest extends OpMode {
         intakeForward.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intakeBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-
         // Adds telemetry data to inform the driver of the robots status as Initialized.
         telemetry.addData("status", "Initialized");
     }
@@ -118,6 +109,8 @@ public class IntakeTest extends OpMode {
         double rightFrontPower;
         double leftBackPower;
         double rightBackPower;
+        double intakeForwardSpeed = 0.0;
+        double intakeBackSpeed = 0.0;
 
 //  Quick reminder on controller layout.
 //
@@ -152,11 +145,6 @@ public class IntakeTest extends OpMode {
         double drive = -gamepad1.left_stick_y;
         double strafe = gamepad1.left_stick_x;
         double turn = gamepad1.right_stick_x;
-        double intakePower = 0.0;
-        double intakePower2 = 0.0;
-
-        double intakePowerBack = 0.0;
-        double intakePower2Back = 0.0;
 
         // Here is the main drive chunk.
         // A LOT of stuff to break down here, so let's go piece by piece.
@@ -167,14 +155,14 @@ public class IntakeTest extends OpMode {
         // Minimum is -1 and the maximum is 1, so let r = range; {r | r >= -1, r =< 1}. You'll get that in grade 10. Maybe.
         // Basically, any number between -1 and 1, or a double.
 
-//        // Here, the number given is \/ after this.     The minimum \/       \/ and the maximum are after their respective labels.
-//        leftFrontPower = Range.clip(drive + turn + strafe, -1, 1);
-//        rightFrontPower = Range.clip(drive - turn - strafe, -1, 1);
-//        leftBackPower = Range.clip(drive + turn - strafe, -1, 1);
-//        rightBackPower = Range.clip(drive - turn + strafe, -1, 1);
-        // Next, a few if statements.
-        // This one is a great example in turning a double into a boolean like mentioned earlier.
-        // We check to see if the right trigger is more than halfway pressed. If it is, the code within is played.
+        // Here, the number given is \/ after this.     The minimum \/       \/ and the maximum are after their respective labels.
+        leftFrontPower = Range.clip(drive + turn + strafe, -1, 1);
+        rightFrontPower = Range.clip(drive - turn - strafe, -1, 1);
+        leftBackPower = Range.clip(drive + turn - strafe, -1, 1);
+        rightBackPower = Range.clip(drive - turn + strafe, -1, 1);
+        //Next, a few if statements.
+        //This one is a great example in turning a double into a boolean like mentioned earlier.
+        //We check to see if the right trigger is more than halfway pressed. If it is, the code within is played.
 //        if(gamepad1.right_trigger > 0.5){
 //            // Of which, the code within just divides all the power variables by 2.
 //            //In summary, if right trigger is pressed, half the power.
@@ -188,74 +176,44 @@ public class IntakeTest extends OpMode {
 //            rightFrontPower /= 4;
 //            rightBackPower /= 4;
 //        }
+        if (gamepad1.left_bumper || gamepad2.left_bumper){
+            intakeForwardSpeed=1;
 
-
-
-        if(gamepad1.right_bumper){
-            intakeBack.setPower(100);
-
-        } else if (!gamepad1.right_bumper) {
-            intakeBack.setPower(0);
+        }else if(gamepad1.dpad_down || gamepad2.dpad_down){
+            intakeForwardSpeed=-1;
+        } else {
+            intakeForwardSpeed=0;
 
         }
-
-        if(gamepad1.a){
-            shooter.setPower(0.9);
-        } else if (!gamepad1.a) {
-            shooter.setPower(0);
-        }
-
-
-
-        if (gamepad2.right_bumper){
-            intakePowerBack=1;
-            intakePower2Back=1;
-
+        if (gamepad1.a || gamepad2.a){
+            shooterVelocity=1800;
         }else {
-            intakePowerBack=0;
-            intakePower2Back=0;
-
+            shooterVelocity=0;
+        }
+        if (gamepad1.right_bumper || gamepad2.right_bumper){
+            intakeBackSpeed=1;
+        } else if (gamepad1.dpad_down || gamepad2.dpad_down) {
+            intakeBackSpeed=-1;
+        } else {
+            intakeBackSpeed=0;
         }
 
-        if (gamepad2.left_bumper){
-            intakePower=1;
-            intakePower2=1;
-
-        }else {
-            intakePower=0;
-            intakePower2=0;
-
-        }
-        if(gamepad2.left_trigger < 0.5){
-
-        }
-        if (gamepad1.dpad_up){
-            blocker.setPosition(0.36);
-            blockerFront.setPosition(0.36);
-        }else{
-            blocker.setPosition(0);
-        }
 
 
         //setting final power levels
-//        leftFrontDrive.setPower(leftFrontPower);
-//        rightFrontDrive.setPower(rightFrontPower);
-//        leftBackDrive.setPower(leftBackPower);
-//        rightBackDrive.setPower(rightBackPower);
-        intakeForward.setPower(intakePower);
-        intakeBack.setPower(intakePower2);
+        leftFrontDrive.setPower(leftFrontPower);
+        rightFrontDrive.setPower(rightFrontPower);
+        leftBackDrive.setPower(leftBackPower);
+        rightBackDrive.setPower(rightBackPower);
+        intakeForward.setPower(intakeForwardSpeed);
+        intakeBack.setPower(intakeBackSpeed);
+        shooter.setVelocity(shooterVelocity);
 
-
-        intakeForward.setPower(intakePowerBack);
-        intakeBack.setPower(intakePower2Back);
-
-
-//        // telemetry
-//        telemetry.addData("left front motor expected", "power = %.2f", leftFrontPower);
-//        telemetry.addData("right front motor expected", "power = %.2f", rightFrontPower);
-//        telemetry.addData("left rear motor expected", "power = %.2f", leftBackPower);
-//        telemetry.addData("right rear motor expected", "power = %.2f", rightBackPower);
-
+        // telemetry
+        telemetry.addData("left front motor expected", "power = %.2f", leftFrontPower);
+        telemetry.addData("right front motor expected", "power = %.2f", rightFrontPower);
+        telemetry.addData("left rear motor expected", "power = %.2f", leftBackPower);
+        telemetry.addData("right rear motor expected", "power = %.2f", rightBackPower);
     }
 
 
@@ -267,7 +225,6 @@ public class IntakeTest extends OpMode {
         rightBackDrive.setPower(0);
         intakeBack.setPower(0);
         intakeForward.setPower(0);
-
     }
 
 }

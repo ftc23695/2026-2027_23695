@@ -1,3 +1,4 @@
+/*
 package org.firstinspires.ftc.teamcode.autos;
 
 import static com.pedropathing.api.Paths.*;
@@ -74,3 +75,4 @@ public class Path1 extends LinearOpMode {
         return Paths.curve(point2Start, point2Control1, point2).linear(point2Start, point2);
     }
 }
+*/

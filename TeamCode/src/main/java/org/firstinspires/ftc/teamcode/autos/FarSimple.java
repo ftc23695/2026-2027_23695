@@ -27,6 +27,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 public class FarSimple extends LinearOpMode {
     private DcMotorEx shooter = null;
     private DcMotor frontIntake = null;
+    private DcMotor backIntake = null;
     private Servo blocker = null;
     private Servo frontBlocker = null;
     int restShooterVeloc = 1000;
@@ -44,7 +45,7 @@ public class FarSimple extends LinearOpMode {
     // Autonomous routine
     public Command autoRoutine() {
         return sequential(
-                shoot(1600, 3000),
+                shoot(1500, 6000),
                 follow(follower, path1()),
                 follow(follower, path2()),
                 stopping()
@@ -54,12 +55,18 @@ public class FarSimple extends LinearOpMode {
     public Command shoot(int power, int pause) {
         return sequential(
                 instant(() -> shooter.setVelocity(power)),
-                waitMs(pause / 2),
+                waitMs(pause/2),
                 instant(() -> frontBlocker.setPosition(0.36)),
                 waitMs(pause/2),
-                instant(() -> frontIntake.setPower(1)),
+                instant(() -> frontIntake.setPower(0.75)),
+                instant(() -> blocker.setPosition(0.36)),
                 waitMs(pause),
+                instant(() -> backIntake.setPower(0.75)),
+                instant(() -> frontBlocker.setPosition(0)),
                 instant(() -> frontIntake.setPower(0)),
+                waitMs(pause),
+                instant(() -> backIntake.setPower(0)),
+                instant(() -> blocker.setPosition(0)),
                 instant(() -> shooter.setVelocity(restShooterVeloc)),
                 instant(() -> frontBlocker.setPosition(0))
         );
@@ -84,6 +91,11 @@ public class FarSimple extends LinearOpMode {
         frontIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontIntake.setDirection(DcMotor.Direction.FORWARD);
         frontIntake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        backIntake = hardwareMap.get(DcMotor.class, "intakeBack");
+        backIntake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        backIntake.setDirection(DcMotor.Direction.FORWARD);
+        backIntake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         blocker = hardwareMap.get(Servo.class, "blocker");
         blocker.setDirection(Servo.Direction.FORWARD);
